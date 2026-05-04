@@ -1,5 +1,8 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": true,
-  "trailingSlash": false
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"outputDirectory": "build",
+	"trailingSlash": false,
+	"rewrites": [
+		{ "source": "/((?!_app/|icons/|manifest\\.webmanifest|robots\\.txt|service-worker\\.js|sitemap\\.xml|favicon\\.ico).*)", "destination": "/index.html" }
+	]
 }
