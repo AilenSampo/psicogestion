@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PsicoGestión — Sistema de turnos para psicopedagogía</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE6;
+    --border: #E2DDD5;
+    --text: #1A1714;
+    --text2: #6B6560;
+    --text3: #A8A39C;
+    --accent: #2E6B5E;
+    --accent-light: #E8F3F0;
+    --accent2: #C17A3C;
+    --accent2-light: #FBF0E5;
+    --danger: #C04040;
+    --danger-light: #FAEAEA;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LAYOUT */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+  .main { flex: 1; overflow-y: auto; }
+
+  /* SIDEBAR */
+  .sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
+  .logo-mark { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 18px; height: 18px; fill: white; }
+  .logo-text { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--text); line-height: 1.2; }
+  .logo-sub { font-size: 11px; color: var(--text3); font-weight: 400; display: block; }
+  .sidebar-nav { padding: 12px 0; flex: 1; }
+  .nav-section { padding: 16px 20px 6px; font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13.5px; color: var(--text2); cursor: pointer; transition: all 0.15s; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+  .nav-icon { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+  .user-chip { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 0; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; flex-shrink: 0; }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-role { font-size: 11px; color: var(--text3); }
+  .plan-badge { margin-top: 10px; background: var(--accent-light); color: var(--accent); font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; display: inline-block; }
+
+  /* TOPBAR */
+  .topbar { padding: 20px 32px 0; display: flex; align-items: center; justify-content: space-between; }
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 24px; }
+  .page-subtitle { font-size: 13px; color: var(--text3); margin-top: 2px; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; font-family: inherit; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #265a4e; }
+  .btn-outline { background: white; color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover { background: var(--surface2); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-danger { background: var(--danger-light); color: var(--danger); }
+  .btn-danger:hover { background: #f5d0d0; }
+
+  /* CONTENT */
+  .content { padding: 24px 32px 40px; }
+
+  /* STATS ROW */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+  .stat-value { font-size: 28px; font-weight: 600; margin-top: 6px; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .stat-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+  .card-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 14px; font-weight: 600; }
+  .card-body { padding: 0; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 20px; text-align: left; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  td { padding: 13px 20px; font-size: 13.5px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAF8; }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 500; }
+  .badge-green { background: #E8F5ED; color: #1E6E3A; }
+  .badge-amber { background: #FEF3E2; color: #9A5D10; }
+  .badge-red { background: var(--danger-light); color: var(--danger); }
+  .badge-gray { background: var(--surface2); color: var(--text2); }
+  .badge-blue { background: #E6F0FA; color: #1A4F8A; }
+
+  /* GRID 2COL */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid3 { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+
+  /* FORM */
+  .form-group { margin-bottom: 16px; }
+  label { font-size: 12px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 5px; }
+  input, select, textarea { width: 100%; padding: 9px 13px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13.5px; font-family: inherit; background: var(--surface); color: var(--text); outline: none; transition: border 0.15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* AGENDA */
+  .agenda-grid { display: grid; grid-template-columns: 80px repeat(5,1fr); border-top: 1px solid var(--border); }
+  .ag-header { font-size: 11px; font-weight: 600; color: var(--text3); padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+  .ag-time { font-size: 11px; color: var(--text3); padding: 0 10px; display: flex; align-items: flex-start; padding-top: 6px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); height: 56px; }
+  .ag-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); height: 56px; padding: 4px; position: relative; cursor: pointer; }
+  .ag-cell:hover { background: var(--accent-light); }
+  .ag-cell:last-child { border-right: none; }
+  .ag-event { background: var(--accent); color: white; border-radius: 6px; padding: 4px 7px; font-size: 11px; line-height: 1.3; height: 100%; }
+  .ag-event.pending { background: var(--accent2); }
+  .ag-event.cancelled { background: var(--surface2); color: var(--text3); text-decoration: line-through; }
+  .ag-event-name { font-weight: 500; }
+
+  /* TURNOS LIST */
+  .turno-row { display: flex; align-items: center; gap: 14px; padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .turno-row:hover { background: #FAFAF8; }
+  .turno-row:last-child { border-bottom: none; }
+  .turno-time { font-size: 13px; font-weight: 600; width: 52px; flex-shrink: 0; }
+  .turno-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .turno-info { flex: 1; }
+  .turno-name { font-size: 13.5px; font-weight: 500; }
+  .turno-detail { font-size: 12px; color: var(--text3); }
+  .turno-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s; }
+  .turno-row:hover .turno-actions { opacity: 1; }
+
+  /* PACIENTE FICHA */
+  .ficha-header { display: flex; align-items: center; gap: 16px; padding: 20px; border-bottom: 1px solid var(--border); }
+  .ficha-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: var(--accent); }
+  .ficha-name { font-size: 18px; font-weight: 600; }
+  .ficha-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .ficha-body { padding: 20px; }
+  .ficha-section { margin-bottom: 20px; }
+  .ficha-section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .ficha-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+  .ficha-key { color: var(--text3); }
+  .ficha-val { font-weight: 500; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 16px; font-weight: 600; }
+  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text3); padding: 0; line-height: 1; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 32px; margin-bottom: 24px; }
+  .tab { padding: 12px 16px; font-size: 13.5px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* NOTIFICATIONS */
+  .notif { display: flex; align-items: flex-start; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .notif:hover { background: #FAFAF8; }
+  .notif:last-child { border-bottom: none; }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 5px; }
+  .notif-dot.read { background: transparent; border: 1.5px solid var(--border); }
+  .notif-text { font-size: 13px; line-height: 1.5; flex: 1; }
+  .notif-time { font-size: 11px; color: var(--text3); }
+
+  /* TOGGLE */
+  .hidden { display: none !important; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 48px 20px; color: var(--text3); }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; margin-bottom: 16px; }
+
+  /* PROGRESS */
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
+
+  /* INFORME */
+  .informe-preview { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; font-size: 13px; line-height: 1.7; }
+  .informe-title { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 4px; }
+  .informe-meta { font-size: 12px; color: var(--text3); margin-bottom: 24px; }
+  .informe-section { margin-bottom: 20px; }
+  .informe-section h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
+  /* COBROS */
+  .cobro-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  .cobro-row:last-child { border-bottom: none; }
+  .cobro-amount { font-size: 15px; font-weight: 600; }
+  .cobro-amount.ingreso { color: #1E6E3A; }
+  .cobro-amount.pendiente { color: var(--accent2); }
+
+  /* RESPONSIVE sidebar toggle */
+  .menu-btn { display: none; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">
+          <svg viewBox="0 0 20 20"><path d="M10 2C7.8 2 6 3.8 6 6c0 1.7 1 3.2 2.5 3.8L8 11H6l-1 7h10l-1-7h-2l-.5-1.2C13 9.2 14 7.7 14 6c0-2.2-1.8-4-4-4z"/></svg>
+        </div>
+        <div class="logo-text">PsicoGestión<span class="logo-sub">sistema de consultorios</span></div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Inicio
+      </button>
+      <button class="nav-item" onclick="showPage('agenda')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" stroke-width="1.2"/></svg>
+        Agenda
+      </button>
+      <button class="nav-item" onclick="showPage('turnos')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 4.5V8l2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Turnos de hoy
+      </button>
+      <div class="nav-section">Pacientes</div>
+      <button class="nav-item" onclick="showPage('pacientes')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="6" cy="4.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M1 13.5c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M11 7l1.5 1.5L15 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Pacientes
+      </button>
+      <button class="nav-item" onclick="showPage('informes')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="1" width="12" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Informes
+      </button>
+      <div class="nav-section">Administración</div>
+      <button class="nav-item" onclick="showPage('cobros')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="4" width="14" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M1 7h14" stroke="currentColor" stroke-width="1.2"/><circle cx="4.5" cy="10" r="1" fill="currentColor"/></svg>
+        Cobros
+      </button>
+      <button class="nav-item" onclick="showPage('config')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.2 3.2l1 1M11.8 11.8l1 1M3.2 12.8l1-1M11.8 4.2l1-1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Configuración
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">U</div>
+        <div>
+          <div class="user-name">Lic. [Tu Nombre]</div>
+          <div class="user-role">Psicopedagoga</div>
+        </div>
+      </div>
+      <span class="plan-badge">Plan Pro ✓</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Buenos días</div>
+          <div class="page-subtitle">Lunes 5 de mayo · 3 turnos hoy</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-outline" onclick="showModal('modal-notifs')">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a5 5 0 0 1 5 5v2l1.5 2.5H1.5L3 8V6a5 5 0 0 1 5-5zM6.5 13.5a1.5 1.5 0 0 0 3 0" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+            Notificaciones <span style="background:var(--danger);color:white;border-radius:10px;font-size:10px;padding:1px 5px;margin-left:2px;">2</span>
+          </button>
+          <button class="btn btn-primary" onclick="showModal('modal-nuevo-turno')">
+            + Nuevo turno
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-label">Turnos esta semana</div>
+            <div class="stat-value">12</div>
+            <div class="stat-sub"><span class="stat-dot" style="background:#1E6E3A"></span>3 hoy</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pacientes activos</div>
+            <div class="stat-value">28</div>
+            <div class="stat-sub"><span class="stat-dot" style="background:#1A4F8A"></span>+2 este mes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Cobros pendientes</div>
+            <div class="stat-value">$34.500</div>
+            <div class="stat-sub"><span class="stat-dot" style="background:#9A5D10"></span>4 sin cobrar</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ausentismo</div>
+            <div class="stat-value">8%</div>
+            <div class="stat-sub"><span class="stat-dot" style="background:#1E6E3A"></span>mejor que el mes pasado</div>
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Próximos turnos</span>
+              <button class="btn btn-sm btn-outline" onclick="showPage('turnos')">Ver todos</button>
+            </div>
+            <div class="card-body">
+              <div class="turno-row" onclick="showModal('modal-turno-detalle')">
+                <div class="turno-time">09:00</div>
+                <div class="turno-avatar" style="background:#E8F3F0;color:#2E6B5E;">MM</div>
+                <div class="turno-info">
+                  <div class="turno-name">Martina Molina</div>
+                  <div class="turno-detail">8 años · Sesión de evaluación</div>
+                </div>
+                <span class="badge badge-green">Confirmado</span>
+              </div>
+              <div class="turno-row" onclick="showModal('modal-turno-detalle')">
+                <div class="turno-time">10:30</div>
+                <div class="turno-avatar" style="background:#FBF0E5;color:#C17A3C;">TG</div>
+                <div class="turno-info">
+                  <div class="turno-name">Tomás García</div>
+                  <div class="turno-detail">10 años · Seguimiento mensual</div>
+                </div>
+                <span class="badge badge-amber">Pendiente</span>
+              </div>
+              <div class="turno-row" onclick="showModal('modal-turno-detalle')">
+                <div class="turno-time">12:00</div>
+                <div class="turno-avatar" style="background:#E6F0FA;color:#1A4F8A;">SL</div>
+                <div class="turno-info">
+                  <div class="turno-name">Sofía López</div>
+                  <div class="turno-detail">7 años · Primera consulta</div>
+                </div>
+                <span class="badge badge-blue">Nueva</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:18px;">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Recordatorios enviados</span></div>
+              <div class="card-body" style="padding:16px 20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span style="font-size:13px;color:var(--text2);">WhatsApp hoy</span>
+                  <span style="font-size:15px;font-weight:600;">3 / 3</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+                <div style="font-size:12px;color:var(--text3);margin-top:8px;">Todos enviados ✓</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Actividad reciente</span></div>
+              <div class="card-body">
+                <div class="notif">
+                  <div class="notif-dot"></div>
+                  <div>
+                    <div class="notif-text">Martina Molina confirmó su turno de las 9:00</div>
+                    <div class="notif-time">hace 20 min</div>
+                  </div>
+                </div>
+                <div class="notif">
+                  <div class="notif-dot read"></div>
+                  <div>
+                    <div class="notif-text">Nuevo paciente: Sofía López · primera consulta agendada</div>
+                    <div class="notif-time">ayer 16:30</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="page" id="page-agenda">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Agenda</div>
+          <div class="page-subtitle">Semana del 5 al 9 de mayo</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-outline">← Anterior</button>
+          <button class="btn btn-outline">Siguiente →</button>
+          <button class="btn btn-primary" onclick="showModal('modal-nuevo-turno')">+ Nuevo turno</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="card">
+          <div class="agenda-grid">
+            <div class="ag-header"></div>
+            <div class="ag-header">Lun 5</div>
+            <div class="ag-header">Mar 6</div>
+            <div class="ag-header">Mié 7</div>
+            <div class="ag-header">Jue 8</div>
+            <div class="ag-header">Vie 9</div>
+            <!-- 9:00 -->
+            <div class="ag-time">09:00</div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Martina M.</div><div>Evaluación</div></div></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Lucas R.</div><div>Seguimiento</div></div></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-nuevo-turno')"></div>
+            <!-- 10:00 -->
+            <div class="ag-time">10:00</div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Ana P.</div><div>Primera consulta</div></div></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Valentina S.</div><div>Evaluación</div></div></div>
+            <div class="ag-cell"></div>
+            <!-- 10:30 -->
+            <div class="ag-time">10:30</div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event pending"><div class="ag-event-name">Tomás G.</div><div>Seguimiento</div></div></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Emilio F.</div><div>Control</div></div></div>
+            <!-- 12:00 -->
+            <div class="ag-time">12:00</div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Sofía L.</div><div>1ra consulta</div></div></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event cancelled"><div class="ag-event-name">Bruno M.</div><div>Cancelado</div></div></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell"></div>
+            <!-- 14:00 -->
+            <div class="ag-time">14:00</div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Camila T.</div><div>Seguimiento</div></div></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Rodrigo V.</div><div>Evaluación</div></div></div>
+            <div class="ag-cell"></div>
+            <!-- 15:30 -->
+            <div class="ag-time">15:30</div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-turno-detalle')"><div class="ag-event"><div class="ag-event-name">Lucía H.</div><div>Seguimiento</div></div></div>
+            <div class="ag-cell"></div>
+            <div class="ag-cell" onclick="showModal('modal-nuevo-turno')"></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:16px;font-size:12px;color:var(--text3);align-items:center;">
+          <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;background:var(--accent);border-radius:3px;display:inline-block;"></span>Confirmado</span>
+          <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;background:var(--accent2);border-radius:3px;display:inline-block;"></span>Pendiente</span>
+          <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;display:inline-block;"></span>Cancelado</span>
+          <span style="color:var(--text3);margin-left:8px;">Clic en celda vacía para agregar turno</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TURNOS HOY -->
+    <div class="page" id="page-turnos">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Turnos de hoy</div>
+          <div class="page-subtitle">Lunes 5 de mayo · 3 turnos</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-outline">Enviar recordatorios</button>
+          <button class="btn btn-primary" onclick="showModal('modal-nuevo-turno')">+ Nuevo turno</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="card">
+          <div class="card-body">
+            <div class="turno-row" onclick="showModal('modal-turno-detalle')">
+              <div class="turno-time">09:00</div>
+              <div class="turno-avatar" style="background:#E8F3F0;color:#2E6B5E;">MM</div>
+              <div class="turno-info">
+                <div class="turno-name">Martina Molina</div>
+                <div class="turno-detail">8 años · Sesión de evaluación · 60 min</div>
+              </div>
+              <span class="badge badge-green">Confirmado</span>
+              <div class="turno-actions">
+                <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showModal('modal-turno-detalle')">Ver ficha</button>
+                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation()">Cancelar</button>
+              </div>
+            </div>
+            <div class="turno-row" onclick="showModal('modal-turno-detalle')">
+              <div class="turno-time">10:30</div>
+              <div class="turno-avatar" style="background:#FBF0E5;color:#C17A3C;">TG</div>
+              <div class="turno-info">
+                <div class="turno-name">Tomás García</div>
+                <div class="turno-detail">10 años · Seguimiento mensual · 45 min</div>
+              </div>
+              <span class="badge badge-amber">Sin confirmar</span>
+              <div class="turno-actions">
+                <button class="btn btn-sm btn-outline" onclick="event.stopPropagation()">Enviar WA</button>
+                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation()">Cancelar</button>
+              </div>
+            </div>
+            <div class="turno-row" onclick="showModal('modal-turno-detalle')">
+              <div class="turno-time">12:00</div>
+              <div class="turno-avatar" style="background:#E6F0FA;color:#1A4F8A;">SL</div>
+              <div class="turno-info">
+                <div class="turno-name">Sofía López</div>
+                <div class="turno-detail">7 años · Primera consulta · 60 min</div>
+              </div>
+              <span class="badge badge-blue">Primera vez</span>
+              <div class="turno-actions">
+                <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showPage('pacientes')">Ver ficha</button>
+                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation()">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PACIENTES -->
+    <div class="page" id="page-pacientes">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Pacientes</div>
+          <div class="page-subtitle">28 pacientes activos</div>
+        </div>
+        <div class="topbar-actions">
+          <input style="width:220px;" placeholder="Buscar paciente..." />
+          <button class="btn btn-primary" onclick="showModal('modal-nuevo-paciente')">+ Nuevo paciente</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="grid2" style="margin-bottom:18px;">
+          <div class="card" style="cursor:pointer;" onclick="showModal('modal-ficha-paciente')">
+            <div class="ficha-header">
+              <div class="ficha-avatar">MM</div>
+              <div>
+                <div class="ficha-name">Martina Molina</div>
+                <div class="ficha-meta">8 años · Escuela Primaria Nº 14 · desde marzo 2024</div>
+              </div>
+              <span class="badge badge-green" style="margin-left:auto;">Activa</span>
+            </div>
+            <div style="padding:10px 20px 14px;display:flex;gap:20px;font-size:12px;color:var(--text3);">
+              <span>12 sesiones</span>
+              <span>Próx. turno: Lun 9:00</span>
+              <span>Motivo: dificultad lectora</span>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="showModal('modal-ficha-paciente')">
+            <div class="ficha-header">
+              <div class="ficha-avatar" style="background:#FBF0E5;color:#C17A3C;">TG</div>
+              <div>
+                <div class="ficha-name">Tomás García</div>
+                <div class="ficha-meta">10 años · Escuela Nº 3 · desde julio 2023</div>
+              </div>
+              <span class="badge badge-green" style="margin-left:auto;">Activo</span>
+            </div>
+            <div style="padding:10px 20px 14px;display:flex;gap:20px;font-size:12px;color:var(--text3);">
+              <span>28 sesiones</span>
+              <span>Próx. turno: Lun 10:30</span>
+              <span>Motivo: atención y concentración</span>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="showModal('modal-ficha-paciente')">
+            <div class="ficha-header">
+              <div class="ficha-avatar" style="background:#E6F0FA;color:#1A4F8A;">SL</div>
+              <div>
+                <div class="ficha-name">Sofía López</div>
+                <div class="ficha-meta">7 años · Escuela Privada San Martín · nueva</div>
+              </div>
+              <span class="badge badge-blue" style="margin-left:auto;">Primera consulta</span>
+            </div>
+            <div style="padding:10px 20px 14px;display:flex;gap:20px;font-size:12px;color:var(--text3);">
+              <span>0 sesiones</span>
+              <span>Turno: Lun 12:00</span>
+              <span>Motivo: dificultades en escritura</span>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer;border:1.5px dashed var(--border);background:transparent;display:flex;align-items:center;justify-content:center;" onclick="showModal('modal-nuevo-paciente')">
+            <div style="text-align:center;color:var(--text3);padding:24px;">
+              <div style="font-size:28px;margin-bottom:8px;">+</div>
+              <div style="font-size:13px;">Agregar paciente</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFORMES -->
+    <div class="page" id="page-informes">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Informes</div>
+          <div class="page-subtitle">Generá y descargá informes en PDF</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" onclick="showModal('modal-nuevo-informe')">+ Nuevo informe</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="grid2" style="margin-bottom:18px;">
+          <div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Informes recientes</span></div>
+              <div class="card-body">
+                <table>
+                  <thead><tr><th>Paciente</th><th>Tipo</th><th>Fecha</th><th></th></tr></thead>
+                  <tbody>
+                    <tr onclick="showModal('modal-informe-preview')" style="cursor:pointer;">
+                      <td>Martina Molina</td>
+                      <td><span class="badge badge-blue">Evaluación</span></td>
+                      <td style="color:var(--text3);font-size:12px;">02/05/2025</td>
+                      <td><button class="btn btn-sm btn-outline">PDF</button></td>
+                    </tr>
+                    <tr onclick="showModal('modal-informe-preview')" style="cursor:pointer;">
+                      <td>Tomás García</td>
+                      <td><span class="badge badge-green">Progreso</span></td>
+                      <td style="color:var(--text3);font-size:12px;">28/04/2025</td>
+                      <td><button class="btn btn-sm btn-outline">PDF</button></td>
+                    </tr>
+                    <tr onclick="showModal('modal-informe-preview')" style="cursor:pointer;">
+                      <td>Lucas Rodríguez</td>
+                      <td><span class="badge badge-amber">Derivación</span></td>
+                      <td style="color:var(--text3);font-size:12px;">20/04/2025</td>
+                      <td><button class="btn btn-sm btn-outline">PDF</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="card" onclick="showModal('modal-informe-preview')" style="cursor:pointer;">
+            <div class="card-header"><span class="card-title">Vista previa</span></div>
+            <div class="card-body" style="padding:20px;">
+              <div class="informe-preview">
+                <div class="informe-title">Informe de evaluación psicopedagógica</div>
+                <div class="informe-meta">Martina Molina · 8 años · 02/05/2025 · Lic. [Tu Nombre]</div>
+                <div class="informe-section">
+                  <h4>Motivo de consulta</h4>
+                  <p>La paciente es derivada por la docente de grado ante dificultades en el proceso lector y comprensión de textos simples...</p>
+                </div>
+                <div class="informe-section">
+                  <h4>Instrumentos utilizados</h4>
+                  <p>Prueba de lectura y escritura (TALE), observación clínica, entrevista a la familia...</p>
+                </div>
+                <div class="informe-section">
+                  <h4>Observaciones</h4>
+                  <p>Se observa un patrón de lectura silábica con dificultades en la decodificación de palabras de alta frecuencia...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COBROS -->
+    <div class="page" id="page-cobros">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Cobros</div>
+          <div class="page-subtitle">Gestión de pagos y MercadoPago</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-outline">Exportar</button>
+          <button class="btn btn-primary" onclick="showModal('modal-cobro')">+ Registrar cobro</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+          <div class="stat-card">
+            <div class="stat-label">Cobrado este mes</div>
+            <div class="stat-value" style="color:#1E6E3A;">$127.500</div>
+            <div class="stat-sub">17 sesiones cobradas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pendiente</div>
+            <div class="stat-value" style="color:#9A5D10;">$34.500</div>
+            <div class="stat-sub">4 sesiones sin cobrar</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Por MercadoPago</div>
+            <div class="stat-value">68%</div>
+            <div class="stat-sub">resto en efectivo</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Movimientos recientes</span></div>
+          <div class="card-body">
+            <div class="cobro-row">
+              <div>
+                <div style="font-size:13.5px;font-weight:500;">Martina Molina</div>
+                <div style="font-size:12px;color:var(--text3);">02/05 · Sesión de evaluación · MercadoPago</div>
+              </div>
+              <div class="cobro-amount ingreso">+ $9.500</div>
+            </div>
+            <div class="cobro-row">
+              <div>
+                <div style="font-size:13.5px;font-weight:500;">Tomás García</div>
+                <div style="font-size:12px;color:var(--text3);">01/05 · Seguimiento · Efectivo</div>
+              </div>
+              <div class="cobro-amount ingreso">+ $8.000</div>
+            </div>
+            <div class="cobro-row">
+              <div>
+                <div style="font-size:13.5px;font-weight:500;">Lucas Rodríguez</div>
+                <div style="font-size:12px;color:var(--text3);">01/05 · Seguimiento · Sin cobrar</div>
+              </div>
+              <div class="cobro-amount pendiente">Pendiente $8.000</div>
+            </div>
+            <div class="cobro-row">
+              <div>
+                <div style="font-size:13.5px;font-weight:500;">Ana Pérez</div>
+                <div style="font-size:12px;color:var(--text3);">30/04 · Primera consulta · MercadoPago</div>
+              </div>
+              <div class="cobro-amount ingreso">+ $10.000</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="page" id="page-config">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Configuración</div>
+          <div class="page-subtitle">Tu consultorio y cuenta</div>
+        </div>
+      </div>
+      <div class="tabs" style="margin-top:20px;">
+        <div class="tab active" onclick="setConfigTab(this,'tab-perfil')">Perfil profesional</div>
+        <div class="tab" onclick="setConfigTab(this,'tab-consultorio')">Consultorio</div>
+        <div class="tab" onclick="setConfigTab(this,'tab-recordatorios')">Recordatorios</div>
+        <div class="tab" onclick="setConfigTab(this,'tab-plan')">Plan y facturación</div>
+      </div>
+      <div class="content" style="padding-top:0;">
+        <div id="tab-perfil">
+          <div class="card" style="max-width:560px;">
+            <div class="card-header"><span class="card-title">Datos profesionales</span></div>
+            <div class="card-body" style="padding:20px;">
+              <div class="form-group"><label>Nombre completo</label><input value="[Tu Nombre]"/></div>
+              <div class="form-group"><label>Matrícula profesional</label><input value="MP-12345"/></div>
+              <div class="form-group"><label>Especialización</label><input value="Psicopedagogía clínica"/></div>
+              <div class="form-group"><label>Email de contacto</label><input value="laura@consultorio.com"/></div>
+              <div class="form-group"><label>WhatsApp profesional</label><input value="+54 9 351 000-0000"/></div>
+              <button class="btn btn-primary">Guardar cambios</button>
+            </div>
+          </div>
+        </div>
+        <div id="tab-consultorio" class="hidden">
+          <div class="card" style="max-width:560px;">
+            <div class="card-header"><span class="card-title">Datos del consultorio</span></div>
+            <div class="card-body" style="padding:20px;">
+              <div class="form-group"><label>Nombre del consultorio</label><input value="Consultorio Psicopedagogía"/></div>
+              <div class="form-group"><label>Dirección</label><input value="Av. Colón 1234, Córdoba"/></div>
+              <div class="form-group"><label>Duración de sesión por defecto</label>
+                <select><option>45 minutos</option><option selected>60 minutos</option><option>90 minutos</option></select>
+              </div>
+              <div class="form-group"><label>Valor de la sesión</label><input value="9500"/></div>
+              <button class="btn btn-primary">Guardar cambios</button>
+            </div>
+          </div>
+        </div>
+        <div id="tab-recordatorios" class="hidden">
+          <div class="card" style="max-width:560px;">
+            <div class="card-header"><span class="card-title">Recordatorios automáticos</span></div>
+            <div class="card-body" style="padding:20px;">
+              <div class="form-group"><label>Cuándo enviar el recordatorio</label>
+                <select><option>24 horas antes</option><option selected>48 horas antes</option><option>72 horas antes</option></select>
+              </div>
+              <div class="form-group"><label>Mensaje personalizado (WhatsApp)</label>
+                <textarea>Hola {nombre_tutor}! Le recordamos que {nombre_paciente} tiene turno mañana {dia} a las {hora} con la Lic. [Tu Nombre]. Consultorio: Av. Colón 1234. Ante cualquier consulta, escribinos. 🗓️</textarea>
+              </div>
+              <button class="btn btn-primary">Guardar</button>
+            </div>
+          </div>
+        </div>
+        <div id="tab-plan" class="hidden">
+          <div class="card" style="max-width:560px;">
+            <div class="card-header">
+              <span class="card-title">Tu plan actual</span>
+              <span class="badge badge-green">Plan Pro activo</span>
+            </div>
+            <div class="card-body" style="padding:20px;">
+              <div style="font-size:28px;font-weight:600;margin-bottom:4px;">$24.900 <span style="font-size:14px;font-weight:400;color:var(--text3);">/mes</span></div>
+              <div style="font-size:13px;color:var(--text3);margin-bottom:20px;">Próxima renovación: 1 de junio de 2025</div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                <div style="font-size:13px;">✓ Hasta 3 profesionales</div>
+                <div style="font-size:13px;">✓ Historia clínica completa</div>
+                <div style="font-size:13px;">✓ Cobro con MercadoPago</div>
+                <div style="font-size:13px;">✓ Informes descargables</div>
+                <div style="font-size:13px;">✓ Recordatorios por WhatsApp</div>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-outline btn-danger">Cancelar plan</button>
+                <button class="btn btn-primary">Subir a Plan Equipo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+
+<!-- Nuevo turno -->
+<div class="modal-overlay hidden" id="modal-nuevo-turno" onclick="closeModal(event,this)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Nuevo turno</div>
+      <button class="modal-close" onclick="closeModalById('modal-nuevo-turno')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Paciente</label>
+        <select><option>Seleccionar paciente...</option><option>Martina Molina</option><option>Tomás García</option><option>Sofía López</option><option>Lucas Rodríguez</option></select>
+      </div>
+      <div class="grid2">
+        <div class="form-group"><label>Fecha</label><input type="date" value="2025-05-05"/></div>
+        <div class="form-group"><label>Hora</label><input type="time" value="09:00"/></div>
+      </div>
+      <div class="form-group"><label>Tipo de sesión</label>
+        <select><option>Primera consulta</option><option>Evaluación</option><option selected>Seguimiento</option><option>Devolución</option></select>
+      </div>
+      <div class="form-group"><label>Duración</label>
+        <select><option>45 minutos</option><option selected>60 minutos</option><option>90 minutos</option></select>
+      </div>
+      <div class="form-group"><label>Notas (opcional)</label><textarea placeholder="Observaciones para esta sesión..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('modal-nuevo-turno')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModalById('modal-nuevo-turno')">Guardar turno</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detalle turno -->
+<div class="modal-overlay hidden" id="modal-turno-detalle" onclick="closeModal(event,this)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Detalle del turno</div>
+      <button class="modal-close" onclick="closeModalById('modal-turno-detalle')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;background:var(--surface2);border-radius:var(--radius);">
+        <div class="ficha-avatar">MM</div>
+        <div>
+          <div style="font-size:16px;font-weight:600;">Martina Molina</div>
+          <div style="font-size:13px;color:var(--text3);">8 años · Sesión de evaluación</div>
+        </div>
+        <span class="badge badge-green" style="margin-left:auto;">Confirmado</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">Fecha y hora</div><div style="font-size:14px;font-weight:500;">Lun 5 · 09:00 hs</div></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">Duración</div><div style="font-size:14px;font-weight:500;">60 minutos</div></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">Cobro</div><div style="font-size:14px;font-weight:500;">$9.500 · Pendiente</div></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">Recordatorio WA</div><div style="font-size:14px;font-weight:500;">Enviado ✓</div></div>
+      </div>
+      <div class="form-group"><label>Notas de sesión</label><textarea placeholder="Registrá observaciones de esta sesión..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" onclick="closeModalById('modal-turno-detalle')">Cancelar turno</button>
+      <button class="btn btn-outline" onclick="closeModalById('modal-turno-detalle');showModal('modal-cobro')">Registrar cobro</button>
+      <button class="btn btn-primary" onclick="closeModalById('modal-turno-detalle')">Guardar notas</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nuevo paciente -->
+<div class="modal-overlay hidden" id="modal-nuevo-paciente" onclick="closeModal(event,this)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Nuevo paciente</div>
+      <button class="modal-close" onclick="closeModalById('modal-nuevo-paciente')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Datos del paciente</div>
+      <div class="grid2">
+        <div class="form-group"><label>Nombre</label><input placeholder="Nombre"/></div>
+        <div class="form-group"><label>Apellido</label><input placeholder="Apellido"/></div>
+      </div>
+      <div class="grid2">
+        <div class="form-group"><label>Fecha de nacimiento</label><input type="date"/></div>
+        <div class="form-group"><label>Género</label><select><option>Femenino</option><option>Masculino</option><option>Otro</option></select></div>
+      </div>
+      <div class="form-group"><label>Institución educativa</label><input placeholder="Escuela / Colegio..."/></div>
+      <div class="form-group"><label>Grado / Año</label><input placeholder="3° grado primaria..."/></div>
+      <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 12px;">Datos del tutor/padre</div>
+      <div class="grid2">
+        <div class="form-group"><label>Nombre del tutor</label><input placeholder="Nombre y apellido"/></div>
+        <div class="form-group"><label>WhatsApp</label><input placeholder="+54 9 351..."/></div>
+      </div>
+      <div class="form-group"><label>Email</label><input placeholder="email@ejemplo.com"/></div>
+      <div class="form-group"><label>Motivo de consulta</label><textarea placeholder="¿Por qué consulta?"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('modal-nuevo-paciente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModalById('modal-nuevo-paciente')">Crear paciente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ficha paciente -->
+<div class="modal-overlay hidden" id="modal-ficha-paciente" onclick="closeModal(event,this)">
+  <div class="modal" style="width:540px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Ficha del paciente</div>
+      <button class="modal-close" onclick="closeModalById('modal-ficha-paciente')">×</button>
+    </div>
+    <div class="ficha-header" style="border-bottom:1px solid var(--border);">
+      <div class="ficha-avatar">MM</div>
+      <div>
+        <div class="ficha-name">Martina Molina</div>
+        <div class="ficha-meta">8 años (nac. 12/03/2016) · activa desde marzo 2024</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn btn-sm btn-outline" onclick="showModal('modal-nuevo-turno');closeModalById('modal-ficha-paciente')">+ Turno</button>
+        <button class="btn btn-sm btn-outline" onclick="showModal('modal-nuevo-informe');closeModalById('modal-ficha-paciente')">+ Informe</button>
+      </div>
+    </div>
+    <div style="padding:16px 20px;overflow-y:auto;max-height:440px;">
+      <div class="ficha-section">
+        <div class="ficha-section-title">Datos escolares</div>
+        <div class="ficha-row"><span class="ficha-key">Institución</span><span class="ficha-val">Escuela Primaria Nº 14</span></div>
+        <div class="ficha-row"><span class="ficha-key">Grado</span><span class="ficha-val">3° grado</span></div>
+        <div class="ficha-row"><span class="ficha-key">Docente</span><span class="ficha-val">Sra. González</span></div>
+      </div>
+      <div class="ficha-section">
+        <div class="ficha-section-title">Familia / Tutores</div>
+        <div class="ficha-row"><span class="ficha-key">Madre</span><span class="ficha-val">Carolina Molina · +54 9 351 111-2222</span></div>
+        <div class="ficha-row"><span class="ficha-key">Email</span><span class="ficha-val">carolina.m@gmail.com</span></div>
+      </div>
+      <div class="ficha-section">
+        <div class="ficha-section-title">Motivo de consulta</div>
+        <p style="font-size:13px;line-height:1.6;color:var(--text2);">Dificultades en el proceso lector. La docente reporta que la niña lee por debajo del nivel esperado para su grado y muestra frustración ante actividades de lectura.</p>
+      </div>
+      <div class="ficha-section">
+        <div class="ficha-section-title">Historial de sesiones</div>
+        <div class="ficha-row"><span class="ficha-key">Total de sesiones</span><span class="ficha-val">12</span></div>
+        <div class="ficha-row"><span class="ficha-key">Última sesión</span><span class="ficha-val">28/04/2025</span></div>
+        <div class="ficha-row"><span class="ficha-key">Próximo turno</span><span class="ficha-val">05/05 · 09:00 hs</span></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('modal-ficha-paciente')">Cerrar</button>
+      <button class="btn btn-primary">Editar ficha</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nuevo informe -->
+<div class="modal-overlay hidden" id="modal-nuevo-informe" onclick="closeModal(event,this)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Nuevo informe</div>
+      <button class="modal-close" onclick="closeModalById('modal-nuevo-informe')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Paciente</label>
+        <select><option>Seleccionar...</option><option>Martina Molina</option><option>Tomás García</option></select>
+      </div>
+      <div class="form-group"><label>Tipo de informe</label>
+        <select><option>Evaluación psicopedagógica</option><option>Informe de progreso</option><option>Informe de derivación</option><option>Informe escolar</option></select>
+      </div>
+      <div class="form-group"><label>Período evaluado</label>
+        <input placeholder="ej: marzo - mayo 2025"/>
+      </div>
+      <div class="form-group"><label>Instrumentos utilizados</label>
+        <textarea placeholder="TALE, DAP, observación clínica..."></textarea>
+      </div>
+      <div class="form-group"><label>Observaciones principales</label>
+        <textarea style="min-height:100px;" placeholder="Descripción de los hallazgos..."></textarea>
+      </div>
+      <div class="form-group"><label>Recomendaciones</label>
+        <textarea placeholder="Sugerencias para la familia y la escuela..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('modal-nuevo-informe')">Cancelar</button>
+      <button class="btn btn-outline" onclick="closeModalById('modal-nuevo-informe');showModal('modal-informe-preview')">Vista previa</button>
+      <button class="btn btn-primary" onclick="closeModalById('modal-nuevo-informe')">Generar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vista previa informe -->
+<div class="modal-overlay hidden" id="modal-informe-preview" onclick="closeModal(event,this)">
+  <div class="modal" style="width:600px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Vista previa del informe</div>
+      <button class="modal-close" onclick="closeModalById('modal-informe-preview')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="informe-preview">
+        <div class="informe-title">Informe de evaluación psicopedagógica</div>
+        <div class="informe-meta">Martina Molina · 8 años · 02/05/2025 · Lic. [Tu Nombre] · MP-12345</div>
+        <div class="informe-section">
+          <h4>Motivo de consulta</h4>
+          <p>La paciente es derivada por la docente de grado ante dificultades en el proceso lector y comprensión de textos. La familia refiere que la niña evita actividades de lectura y muestra frustración frecuente en situaciones académicas.</p>
+        </div>
+        <div class="informe-section">
+          <h4>Instrumentos utilizados</h4>
+          <p>Prueba de lectura y escritura (TALE), Figura de Rey, observación clínica, entrevista semidirigida a la familia, revisión de carpeta escolar.</p>
+        </div>
+        <div class="informe-section">
+          <h4>Hallazgos principales</h4>
+          <p>Se observa un patrón de lectura silábica con dificultades en la decodificación de palabras de alta frecuencia. El rendimiento en comprensión lectora se ubica por debajo del nivel esperado para el grado.</p>
+        </div>
+        <div class="informe-section">
+          <h4>Recomendaciones</h4>
+          <p>Se sugiere intervención psicopedagógica de frecuencia semanal, articulación con la docente para adaptaciones curriculares, y seguimiento bimestral del progreso.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('modal-informe-preview')">Cerrar</button>
+      <button class="btn btn-primary">Descargar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cobro -->
+<div class="modal-overlay hidden" id="modal-cobro" onclick="closeModal(event,this)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Registrar cobro</div>
+      <button class="modal-close" onclick="closeModalById('modal-cobro')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Paciente</label>
+        <select><option>Martina Molina</option><option>Tomás García</option><option>Lucas Rodríguez</option></select>
+      </div>
+      <div class="form-group"><label>Monto</label><input value="9500" type="number"/></div>
+      <div class="form-group"><label>Método de pago</label>
+        <select><option>MercadoPago</option><option>Efectivo</option><option>Transferencia</option></select>
+      </div>
+      <div class="form-group"><label>Sesión correspondiente</label>
+        <select><option>05/05 · 09:00 · Evaluación</option><option>28/04 · Seguimiento</option></select>
+      </div>
+      <div style="background:var(--accent-light);border-radius:var(--radius);padding:12px 16px;font-size:13px;color:var(--accent);margin-top:4px;">
+        Con MercadoPago podés enviarle un link de pago directamente por WhatsApp al tutor.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('modal-cobro')">Cancelar</button>
+      <button class="btn btn-outline" onclick="closeModalById('modal-cobro')">Enviar link MP</button>
+      <button class="btn btn-primary" onclick="closeModalById('modal-cobro')">Confirmar cobro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notificaciones -->
+<div class="modal-overlay hidden" id="modal-notifs" onclick="closeModal(event,this)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Notificaciones</div>
+      <button class="modal-close" onclick="closeModalById('modal-notifs')">×</button>
+    </div>
+    <div class="card-body">
+      <div class="notif">
+        <div class="notif-dot"></div>
+        <div style="flex:1;">
+          <div class="notif-text"><strong>Martina Molina</strong> confirmó su turno del lunes a las 9:00 hs.</div>
+          <div class="notif-time">hace 20 minutos</div>
+        </div>
+      </div>
+      <div class="notif">
+        <div class="notif-dot"></div>
+        <div style="flex:1;">
+          <div class="notif-text"><strong>Cobro pendiente</strong>: Lucas Rodríguez · sesión del 01/05 · $8.000</div>
+          <div class="notif-time">hace 2 horas</div>
+        </div>
+      </div>
+      <div class="notif">
+        <div class="notif-dot read"></div>
+        <div style="flex:1;">
+          <div class="notif-text">Recordatorio enviado a la familia de Tomás García (WhatsApp) ✓</div>
+          <div class="notif-time">ayer 18:00</div>
+        </div>
+      </div>
+      <div class="notif">
+        <div class="notif-dot read"></div>
+        <div style="flex:1;">
+          <div class="notif-text">Nuevo paciente registrado: <strong>Sofía López</strong> · primera consulta agendada</div>
+          <div class="notif-time">ayer 16:30</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModalById('modal-notifs')">Marcar todo como leído</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget && event.currentTarget.classList.add('active');
+}
+
+function showModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function closeModalById(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+function closeModal(event, overlay) {
+  if (event.target === overlay) overlay.classList.add('hidden');
+}
+
+function setConfigTab(tab, tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  ['tab-perfil','tab-consultorio','tab-recordatorios','tab-plan'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+  });
+  document.getElementById(tabId).classList.remove('hidden');
+}
+
+// nav active state fix
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
