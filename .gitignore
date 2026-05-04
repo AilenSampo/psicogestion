@@ -27,3 +27,6 @@ vite.config.ts.timestamp-*
 
 # Local
 .vscode/settings.json
+
+# Notas privadas (no se publican en el repo)
+private-notes/
